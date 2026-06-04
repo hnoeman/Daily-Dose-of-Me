@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Counting the Days</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Heebo:wght@300;400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --sky:    #e8f4f8;
+      --mist:   #cce8f0;
+      --teal:   #7ec8d8;
+      --deep:   #4a9ab0;
+      --darker: #2d6e82;
+      --dot:    #a8d8e8;
+      --text:   #2a5a6a;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background-color: var(--sky);
+      background-image: radial-gradient(circle, var(--dot) 1.2px, transparent 1.2px);
+      background-size: 28px 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Heebo', sans-serif;
+      padding: 40px 20px;
+      transition: background-color 1.5s ease;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(180,220,235,0.45) 100%);
+      pointer-events: none;
+    }
+
+    h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 700;
+      font-size: clamp(2.2rem, 6vw, 3.6rem);
+      color: var(--darker);
+      letter-spacing: 0.06em;
+      margin-bottom: 10px;
+      text-align: center;
+      opacity: 0;
+      animation: fadeDown 0.8s ease forwards;
+    }
+
+    .countdown {
+      font-family: 'Heebo', sans-serif;
+      font-weight: 300;
+      font-size: 0.95rem;
+      color: var(--deep);
+      letter-spacing: 0.1em;
+      margin-bottom: 44px;
+      text-align: center;
+      opacity: 0;
+      animation: fadeDown 0.8s ease 0.2s forwards;
+    }
+
+    .grid {
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      align-items: center;
+      width: 100%;
+    }
+
+    .btn-wrap {
+      opacity: 0;
+      transform: translateY(18px);
+      animation: riseIn 0.6s ease forwards;
+      position: relative;
+    }
+
+    .btn-wrap:nth-child(1) { animation-delay: 0.15s; }
+    .btn-wrap:nth-child(2) { animation-delay: 0.25s; }
+    .btn-wrap:nth-child(3) { animation-delay: 0.35s; }
+    .btn-wrap:nth-child(4) { animation-delay: 0.45s; }
+    .btn-wrap:nth-child(5) { animation-delay: 0.55s; }
+    .btn-wrap:nth-child(6) { animation-delay: 0.65s; }
+    .btn-wrap:nth-child(7) { animation-delay: 0.75s; }
+
+    a.btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #ffffff 0%, var(--mist) 100%);
+      box-shadow:
+        0 6px 24px rgba(74,154,176,0.35),
+        0 2px 8px rgba(74,154,176,0.20),
+        inset 0 1px 2px rgba(255,255,255,0.9);
+      text-decoration: none;
+      color: var(--text);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    a.btn::before {
+      content: '';
+      position: absolute;
+      top: -40%;
+      left: -40%;
+      width: 80%;
+      height: 80%;
+      background: radial-gradient(circle, rgba(255,255,255,0.7) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    a.btn:hover {
+      transform: scale(1.07) translateY(-3px);
+      box-shadow:
+        0 14px 40px rgba(74,154,176,0.45),
+        0 4px 12px rgba(74,154,176,0.25),
+        inset 0 1px 2px rgba(255,255,255,0.9);
+    }
+
+    a.btn:active { transform: scale(0.97); }
+
+    /* Today's button — glowing ring */
+    a.btn.today {
+      background: linear-gradient(145deg, #ffffff 0%, #b8e4f0 100%);
+      box-shadow:
+        0 0 0 4px rgba(126,200,216,0.5),
+        0 0 20px rgba(126,200,216,0.6),
+        0 6px 24px rgba(74,154,176,0.4),
+        inset 0 1px 2px rgba(255,255,255,0.9);
+      animation: pulse 2.5s ease-in-out infinite;
+    }
+
+    /* Past days — checkmark badge */
+    .check-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--teal);
+      color: white;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(74,154,176,0.3);
+      z-index: 2;
+    }
+
+    .day-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 600;
+      font-size: 1.5rem;
+      color: var(--deep);
+      letter-spacing: 0.04em;
+      margin-bottom: 5px;
+    }
+
+    .day-date {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 700;
+      font-size: 1.85rem;
+      color: var(--darker);
+      letter-spacing: 0.06em;
+    }
+
+    /* Popup */
+    .popup-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(180, 220, 235, 0.35);
+      backdrop-filter: blur(6px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .popup-overlay.active { display: flex; }
+
+    .popup-box {
+      background: linear-gradient(145deg, #ffffff, #daf0f7);
+      border-radius: 28px;
+      padding: 44px 52px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(74,154,176,0.25);
+      animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      max-width: 300px;
+    }
+
+    .popup-emoji {
+      font-size: 4rem;
+      display: block;
+      margin-bottom: 16px;
+    }
+
+    .popup-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.2rem;
+      color: var(--darker);
+      line-height: 1.6;
+    }
+
+    .popup-close {
+      margin-top: 24px;
+      display: inline-block;
+      padding: 10px 28px;
+      border-radius: 50px;
+      background: var(--teal);
+      color: white;
+      font-family: 'Heebo', sans-serif;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border: none;
+      transition: background 0.2s;
+    }
+
+    .popup-close:hover { background: var(--deep); }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes riseIn {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.7); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 4px rgba(126,200,216,0.5), 0 0 20px rgba(126,200,216,0.6), 0 6px 24px rgba(74,154,176,0.4), inset 0 1px 2px rgba(255,255,255,0.9); }
+      50%       { box-shadow: 0 0 0 8px rgba(126,200,216,0.25), 0 0 32px rgba(126,200,216,0.4), 0 6px 24px rgba(74,154,176,0.4), inset 0 1px 2px rgba(255,255,255,0.9); }
+    }
+
+    @media (min-width: 520px) {
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 180px);
+        gap: 28px;
+        justify-content: center;
+      }
+      .btn-wrap:nth-child(7) { grid-column: 2; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Counting the Days ✨</h1>
+  <p class="countdown" id="countdown"></p>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="popup-overlay" id="popup">
+    <div class="popup-box">
+      <span class="popup-emoji">😘</span>
+      <p class="popup-text">Just a little patience...<br>this day hasn't arrived yet!</p>
+      <button class="popup-close" onclick="closePopup()">OK 💙</button>
+    </div>
+  </div>
+
+  <script>
+    const days = [
+      { name: "Tuesday",   date: "10.6.26", dateObj: "2026-06-10", url: "https://youtube.com/watch?v=79bxCBjgIrY&si=9gY-ECdKzXhSkuJD" },
+      { name: "Wednesday", date: "11.6.26", dateObj: "2026-06-11", url: "https://youtube.com/watch?v=KKyvRoZXMeQ&si=sutdpRE3Z1P6RA3-" },
+      { name: "Thursday",  date: "12.6.26", dateObj: "2026-06-12", url: "https://www.instagram.com/p/DY4vcahjJZh/?img_index=3" },
+      { name: "Friday",    date: "13.6.26", dateObj: "2026-06-13", url: "https://share.google/xuS0VX73ppfkD8A2R" },
+      { name: "Saturday",  date: "14.6.26", dateObj: "2026-06-14", url: null },
+      { name: "Sunday",    date: "15.6.26", dateObj: "2026-06-15", url: null },
+      { name: "Monday",    date: "16.6.26", dateObj: "2026-06-16", url: null },
+    ];
+
+    const startDate = new Date("2026-06-10");
+    const endDate   = new Date("2026-06-16");
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Dynamic background by time of day
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) {
+      document.body.style.backgroundColor = "#eef7fb"; // morning — lighter
+    } else if (hour >= 12 && hour < 18) {
+      document.body.style.backgroundColor = "#e8f4f8"; // midday — default
+    } else {
+      document.body.style.backgroundColor = "#c8dfe8"; // evening — deeper blue
+    }
+
+    // Countdown text
+    const countdownEl = document.getElementById("countdown");
+    if (today < startDate) {
+      const diff = Math.round((startDate - today) / (1000 * 60 * 60 * 24));
+      countdownEl.textContent = diff === 1 ? "1 day to go ✨" : `${diff} days to go ✨`;
+    } else if (today <= endDate) {
+      countdownEl.textContent = "We're in it 💙";
+    } else {
+      countdownEl.textContent = "What a week it was 💙";
+    }
+
+    const grid = document.getElementById("grid");
+
+    days.forEach(day => {
+      const dayDate = new Date(day.dateObj);
+      dayDate.setHours(0, 0, 0, 0);
+      const isFuture = dayDate > today;
+      const isToday  = dayDate.getTime() === today.getTime();
+      const isPast   = dayDate < today;
+
+      const wrap = document.createElement("div");
+      wrap.className = "btn-wrap";
+
+      // Checkmark badge for past days
+      if (isPast) {
+        const badge = document.createElement("div");
+        badge.className = "check-badge";
+        badge.textContent = "✓";
+        wrap.appendChild(badge);
+      }
+
+      const btn = document.createElement("a");
+      btn.className = "btn" + (isToday ? " today" : "");
+      btn.href = "#";
+
+      btn.innerHTML = `
+        <span class="day-name">${day.name}</span>
+        <span class="day-date">${day.date}</span>
+      `;
+
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (day.url) {
+          window.open(day.url, "_blank");
+        }
+      });
+
+      wrap.appendChild(btn);
+      grid.appendChild(wrap);
+    });
+
+    function openPopup() {
+      document.getElementById("popup").classList.add("active");
+    }
+
+    function closePopup() {
+      document.getElementById("popup").classList.remove("active");
+    }
+
+    document.getElementById("popup").addEventListener("click", (e) => {
+      if (e.target === document.getElementById("popup")) closePopup();
+    });
+  </script>
+
+</body>
+</html>
